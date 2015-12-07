@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Heat Map</title>
+
+    <!-- stype is from http://bl.ocks.org/weiglemc/6185069 -->
+    <style>
+        body {
+          font: 11px sans-serif;
+      }
+
+      .axis path,
+      .axis line {
+          stroke: #000;
+          shape-rendering: crispEdges;
+      }
+
+      .dot {
+          stroke: #000;
+      }
+
+      .tooltip {
+          position: absolute;
+          width: 200px;
+          height: 28px;
+          pointer-events: none;
+      }
+
+      .M {
+        margin-top: 300px;
+      }
+
+      .D {
+        margin-top: 600px;
+      }
+  </style>
+
+</head>
+<body>
+    <!-- import d3 -->
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+
+    <!-- actual rendering script -->
+    <script type="text/javascript">
+        var margin = {top: 20, right: 20, bottom: 30, left: 40},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+        // setup x
+        // 1 frame is 1/400 sec
+        var xValue = function(d) { return d.id * 1 / 400;}, // data -> value
+            xScale = d3.scale.linear().range([0, width]), // value -> display
+            xMap = function(d) { return xScale(xValue(d));}, // data -> display
+            xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+
+        // setup y
+        var yValue = function(d) { return d.floor; }, // data -> value
+            yScale = d3.scale.linear().range([height, 0]), // value -> display
+            yMap = function(d) { return yScale(yValue(d));}, // data -> display
+            yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+        // add the graph canvas to the body of the webpage
+        var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        // add the tooltip area to the webpage
+        var tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+        // load data
+        d3.csv("St12HingeEQ7MCE.csv", function(error, data) {
+
+            // change string (from CSV) into number format
+            data.forEach(function(d) {
+                d.id = +d.id;
+                d.floor = +d.floor;
+                d.shear = Number(d.shear);
+                //console.log(d);
+            })
+
+             // setup fill color
+             var cValue = function(d) { return d.shear;},
+             shearExtent = d3.extent(data, cValue);
+             color = d3.scale.linear().domain([-2, 0,2]).range(["#0571b0", "#f7f7f7", "#ca0020"]);
+
+             xScale.domain([d3.min(data, xValue), d3.max(data,xValue)*1.05]);
+             yScale.domain([d3.min(data, yValue)-1, d3.max(data,yValue)]);
+
+            // x-axis
+            svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis)
+            .append("text")
+            .attr("class", "label")
+            .attr("x", width)
+            .attr("y", -6)
+            .style("text-anchor", "end")
+            .text("Time(sec)");
+
+            // y-axis
+            svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxis)
+            .append("text")
+            .attr("class", "label")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Floor");
+
+            // draw rects
+            svg.selectAll(".block")
+            .data(data)
+            .enter().append("rect")
+            .attr("class", "block")
+            .attr("width", xScale(1/400))
+            .attr("height", yScale(1)-yScale(2))
+            .attr("x", xMap)
+            .attr("y", yMap)
+            .style("fill", function(d) { return color(cValue(d));})
+            .style("stroke", "None")
+            .on("mouseover", function(d) {
+                tooltip.transition()
+                .duration(200)
+                .style("opacity", .9);
+                tooltip.html("Floor: " + d.floor + "<br/> (" + xValue(d)
+                    + ", " + d["shear"] + ")")
+                .style("left", (d3.event.pageX + 5) + "px")
+                .style("top", (d3.event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                tooltip.transition()
+                .duration(500)
+                .style("opacity", 0);
+            });
+
+            // create ledgend
+            var legend = svg.selectAll(".legend")
+            .data(z.ticks(6).slice(1).reverse())
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", function(d, i) { return "translate(" + (width + 20) + "," + (20 + i * 20) + ")"; });
+
+            legend.append("rect")
+            .attr("width", 20)
+            .attr("height", 20)
+            .style("fill", z);
+
+            legend.append("text")
+            .attr("x", 26)
+            .attr("y", 10)
+            .attr("dy", ".35em")
+            .text(String);
+
+            svg.append("text")
+            .attr("class", "label")
+            .attr("x", width + 20)
+            .attr("y", 10)
+            .attr("dy", ".35em")
+            .text("Count");
+
+        });
+/*
+var color = d3.scale.linear()
+    .domain(5,4,3,2,1,0,-1,-2,-3,-4,-5)
+    .range(
+    ["#a50026",
+"#d73027",
+"#f46d43",
+"#fdae61",
+"#fee090",
+"#ffffbf",
+"#e0f3f8",
+"#abd9e9",
+"#74add1",
+"#4575b4",
+"#313695"]);
+*/
+
+</script>
+
+</body>
+</html>

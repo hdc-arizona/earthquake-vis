@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Line Chart</title>
+
+    <!-- stype is from http://bl.ocks.org/weiglemc/6185069 -->
+    <style>
+        body {
+          font: 11px sans-serif;
+      }
+
+      .axis path,
+      .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+      }
+
+      .line {
+          fill: none;
+          stroke-width: 1.5px;
+      }
+
+      .tooltip {
+          position: absolute;
+          width: 200px;
+          height: 28px;
+          pointer-events: none;
+
+      }
+      .tick line {
+        opacity: 0.2;
+      }
+  </style>
+
+</head>
+<body>
+    <!-- import d3 -->
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+
+    <!-- actual rendering script -->
+    <script type="text/javascript">
+        var margin = {top: 20, right: 20, bottom: 30, left: 40},
+        width = 960 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+        // setup x
+        // 1 frame is 1/400 sec
+        var xValue = function(d) { return d.id * 1 / 400;}, // data -> value
+            xScale = d3.scale.linear().range([0, width]), // value -> display
+            xMap = function(d) { return xScale(xValue(d));}, // data -> display
+            xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+
+        // setup y
+        var yValue = function(d) { return d.shear; }, // data -> value
+            yScale = d3.scale.linear().range([height, 0]), // value -> display
+            yMap = function(d) { return yScale(yValue(d));}, // data -> display
+            yAxis = d3.svg.axis().scale(yScale).orient("left").innerTickSize(-width)
+                    .outerTickSize(0)
+                    .tickPadding(10);
+
+        // setup fill color
+        var cValue = function(d) { return d.floor; },
+        cScale = d3.scale.category20(),
+        cMap = function(d) { return cScale(cValue(d) )};
+
+        // add the graph canvas to the body of the webpage
+        var svg = d3.select("body").append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+
+        zoom = d3.behavior.zoom()
+            .scaleExtent([1,1000])
+            .on("zoom", zoomEvent)
+            .x(xScale);
+
+        cell = svg.append("rect")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("x", margin.left)
+            .attr("y", margin.top)
+            .attr("pointer-events", "all")
+            .style("fill", "none")
+            .attr("class", "cell")
+
+        cell.call(zoom);
+
+        // add the tooltip area to the webpage
+        var tooltip = d3.select("body").append("div")
+        .attr("class", "tooltip")
+        .style("opacity", 0);
+
+        // load data
+        d3.csv("St12HingeEQ7MCE.csv", function(error, data) {
+
+            var dataByFloor = [];
+            // change string (from CSV) into number format
+            data.forEach(function(d) {
+                d.id = +d.id;
+                d.floor = +d.floor;
+                d.shear = Number(d.shear);
+                if (!dataByFloor[d.floor]) dataByFloor[d.floor] = [d];
+                else dataByFloor[d.floor].push(d);
+            })
+
+            xScale.domain([d3.min(data, xValue), d3.max(data,xValue)*1.05]);
+            yScale.domain([d3.min(data, yValue)-1, d3.max(data,yValue)+1]);
+
+            // x-axis
+            svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis)
+            .append("text")
+            .attr("class", "label")
+            .attr("x", width)
+            .attr("y", -6)
+            .style("text-anchor", "end")
+            .text("Time(sec)");
+
+            // y-axis
+            svg.append("g")
+            .attr("class", "y axis")
+            .call(yAxis)
+            .append("text")
+            .attr("class", "label")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .text("Shear");
+
+            // draw lines
+            dataByFloor.forEach(function(d){
+                var line = d3.svg.line()
+                .x(xMap).y(yMap)
+                svg.append("path")
+                .datum(d)
+                .attr("class", "line")
+                .style("stroke", function(d) {return cScale(d[0].floor);})
+                .attr("d", line);
+                var f = cValue;
+            });
+
+            // draw legend
+            var legend = svg.selectAll(".legend")
+            .data(cScale.domain())
+            .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+            // draw legend colored rectangles
+            legend.append("rect")
+            .attr("x", width - 18)
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", cScale);
+
+            // draw legend text
+            legend.append("text")
+            .attr("x", width - 24)
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .style("text-anchor", "end")
+            .text(function(d) { return d;})
+
+            //svg.call(zoom);
+        });
+
+    function zoomEvent() {
+        var s = d3.event.scale;
+        console.log(s);
+    }
+
+
+
+</script>
+
+</body>
+</html>

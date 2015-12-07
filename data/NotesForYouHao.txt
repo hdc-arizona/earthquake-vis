@@ -1,0 +1,10 @@
+% Intensity Measures:
+
+% Diaphragm Force: is the force due to excitation(earthquake) on masses 
+% Shear: is the horizontal force carried by each floor
+% Moment: the effect of a force at a distance 
+
+% Drift: Corresponding to the deformation in each floor level
+% Interstory Drift: The difference in the drift in consecutive floors 
+% Interstory Drift Ratio: The ratio of interstory drift to corresponding floor height
+
