@@ -23,5 +23,5 @@ for i in range(12):
     pyplot.axis([0,len(shears[i]),-4,4])
     pyplot.plot(shears[i],color=cm(i/12))
     print(len(shears[i]))
-pyplot.colorbar()
+#pyplot.colorbar()
 pyplot.show()
