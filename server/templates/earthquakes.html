@@ -1,0 +1,46 @@
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block title %}
+Earthquake Simulation Data
+{% endblock %}
+{% block body %}
+<div class="container">
+    <h1>Earthquake Simulation Data</h1>
+    <div class="container">
+        <form>
+            {{ wtf.quick_form(newSimForm) }}
+            <br/>
+        </form>
+    </div>
+    <table class="table">
+        <caption>Data List:</caption>
+        <tr>
+            <th>EQ</th>
+            <th>SIM</th>
+            <th>Earthquake Accelaration</th>
+            <th>Shear</th>
+            <th>Moment</th>
+            <th>Diaphram Force</th>
+            <th>Diaphram Accelaration / PGA</th>
+            <th>Drift Ratio</th>
+            <th>Interstory Drift Ratio</th>
+        </tr>
+        {% for eq in eqs | dictsort %}
+            {% for sims in eq[1] | dictsort %}
+            <tr>
+                <td> <a href="/vis?id={{ eq[0] }}">{{ eq[0] }}</a></td>
+                <td>{{sims[0]}}</td>
+                <td class="success"><a href="{{ url_for('static', filename='data/earthquakes/dataforEQ' + eq[0] + '/EQnew' + eq[0] + '.txt') }}">Download</a></td>
+                {% for file in files %}
+                    {% if sims[1][loop.index-1] %}
+                        <td class="success"><a href="{{ url_for('static', filename='data/earthquakes/dataforEQ' + eq[0] + '/dataForSIM' + sims[0] + "/" + file) }}">Download</a></td>
+                    {% else %}
+                        <td class="warning">Missing</td>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}
