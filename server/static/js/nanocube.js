@@ -33,17 +33,23 @@ nc.query_categorty = function (c_id, handleFunc) {
 };
 
 nc.query_quadtree = function (extent, xExtent, yExtent, handleFunc) {
+    console.log('extent', extent);
+    console.log(xExtent);
+    console.log(yExtent);
     var n = Math.pow(2, nc._quadtree_level);
+    //var n = Math.pow(2, 2);
     var xRange = xExtent[1]-xExtent[0];
     var yRange = yExtent[1]-yExtent[0];
-    var lowXTile = Math.min(n,Math.floor(((extent[0][0]-xExtent[0])/xRange)*n));
-    var lowYTile = Math.min(n,Math.floor(((extent[0][1]-xExtent[0])/xRange)*n));
-    var upXTile = Math.min(n,Math.floor(((extent[1][0]-yExtent[0])/yRange)*n));
-    var upYTile = Math.min(n,Math.floor(((extent[1][1]-yExtent[0])/yRange)*n));
+    var lowXTile = Math.min(n-1,Math.floor(((extent[0][0]-xExtent[0])/xRange)*n));
+    var upXTile = Math.min(n-1,Math.floor(((extent[0][1]-xExtent[0])/xRange)*n));
+    var lowYTile = Math.min(n-1,Math.floor(((extent[1][0]-yExtent[0])/yRange)*n));
+    var upYTile = Math.min(n-1,Math.floor(((extent[1][1]-yExtent[0])/yRange)*n));
     var query = 'http://localhost:29512/count.r("location",range2d(tile2d({0},{1},{4}),tile2d({2},{3},{4})))'.format(lowXTile,lowYTile,upXTile,upYTile,nc._quadtree_level);
+    //var query = 'http://localhost:29512/count.r("location",range2d(tile2d({0},{1},{4}),tile2d({2},{3},{4})))'.format(lowXTile,lowYTile,upXTile,upYTile,2);
+    //var query = 'http://localhost:29512/count';
     console.log(query);
     $.getJSON(query, function(data) {
-        console.log(data);
+        //console.log(data);
         var vec = data.root.val;
         if(typeof vec === 'undefined') {
             return;
@@ -94,7 +100,7 @@ nc._pca = function (vec) {
         list.push({'value':eig_value[i], 'vector':eig_vector[i]});
     }
     list.sort(function(a, b) {
-        return a.value - b.value;
+        return b.value - a.value;
     });
     for(var i = 0; i < eig_value.length; i ++) {
         eig_value[i] = list[i].value;

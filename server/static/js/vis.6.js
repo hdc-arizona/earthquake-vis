@@ -110,9 +110,11 @@ function sim(eid,numStory) {
         for (var i = startTime; i < endTime; i++) {
             for (var j = startFloor; j < endFloor; j++) {
                 var row = [];
-                for (var attr in this.ts) {
-                    //console.log(attr);
-                    row.push(this.ts[attr].data[i][j]);
+                var attrs = ['shear', 'moment', 'diaphram force', 'acceleration/PGA', 'drift ratio','interstory drift ratio'];
+                for (var attr in attrs) {
+                    //console.log(row[attr]);
+                    //debugger;
+                    row.push(this.ts[attrs[attr]].data[i][j]);
                 }
                 result.push(row);
 
@@ -419,6 +421,7 @@ function drawControlPanel(div) {
     div.spy = div.append("select").attr("id","spySelection").on("change", function() {
         spyAttr = this.options[this.selectedIndex].value;
         updateScatterPlot(scatterPlot);
+        updatePCAPlot(pcaPlot);
     });
     div.spy.append("option").attr("value", "None").text("None");
     spyAttr = "None";
@@ -427,6 +430,7 @@ function drawControlPanel(div) {
     div.altStory = div.append("select").attr("id","spySelection").on("change", function() {
         altStory = this.options[this.selectedIndex].value;
         updateScatterPlot(scatterPlot);
+        updatePCAPlot(pcaPlot);
     });
     altStory = "None";
     div.altStory.append("option").attr("value", "None").text("None");
@@ -434,6 +438,7 @@ function drawControlPanel(div) {
     div.append("button").text("Change Color Scale").on("click", function(){
         useLogDensityScale = !useLogDensityScale;
         updateScatterPlot(scatterPlot);
+        updatePCAPlot(pcaPlot);
     })
 }
 
@@ -625,6 +630,7 @@ function newTimeseries() {
     tsDivs.push(div);
     tsBrushExtent = [[scaleLeftXDynamic.domain()[0],0], [scaleLeftXDynamic.domain()[1], currentSim.numStory]];
     updateScatterPlot(scatterPlot);
+    updatePCAPlot(pcaPlot);
 }
 
 function updateTimeseries() {
@@ -1187,11 +1193,12 @@ function updatePCABins(svg) {
     */
     var pca = new PCA();
     var beforeMatrix = new Date().getTime();
-    matrix = currentSim.getDataMatrix(iStart, iEnd+1, jStart, jEnd+1);
+    matrix = currentSim.getDataMatrix(iStart, iEnd, jStart, jEnd);
     var afterMatrix = new Date().getTime();
     console.log("Prepare Matrix: " + (afterMatrix - beforeMatrix));
     matrix = pca.scale(matrix,true,true);
     matrix = pca.pca(matrix);
+    console.log(matrix);
     var afterPCA = new Date().getTime();
     console.log("Calculate PCA: " + (afterPCA - afterMatrix));
     pcaXExtent = d3.extent(matrix, function(data){ return data[0]; });

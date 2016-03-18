@@ -122,9 +122,11 @@ function sim(eid,numStory) {
         for (var i = startTime; i < endTime; i++) {
             for (var j = startFloor; j < endFloor; j++) {
                 var row = [];
-                for (var attr in this.ts) {
-                    //console.log(attr);
-                    row.push(this.ts[attr].data[i][j]);
+                var attrs = ['shear', 'moment', 'diaphram force', 'acceleration/PGA', 'drift ratio','interstory drift ratio'];
+                for (var attr in attrs) {
+                    //console.log(row[attr]);
+                    //debugger;
+                    row.push(this.ts[attrs[attr]].data[i][j]);
                 }
                 result.push(row);
 
@@ -366,6 +368,7 @@ function drawTimeseriesControl(div,svg) {
         d3.select(brushCell).call(tsBrush.clear());
         updateTimeseriesPlot(div,this.options[this.selectedIndex].value);
         updateScatterPlot(scatterPlot);
+        updatePCABins(svg);
         updatePCAPlot(pcaPlot);
     });
     var s = ["None"];
@@ -431,6 +434,8 @@ function drawControlPanel(div) {
     div.spy = div.append("select").attr("id","spySelection").on("change", function() {
         spyAttr = this.options[this.selectedIndex].value;
         updateScatterPlot(scatterPlot);
+        //updatePCABins(svg);
+        updatePCAPlot(pcaPlot);
     });
     div.spy.append("option").attr("value", "None").text("None");
     spyAttr = "None";
@@ -439,6 +444,8 @@ function drawControlPanel(div) {
     div.altStory = div.append("select").attr("id","spySelection").on("change", function() {
         altStory = this.options[this.selectedIndex].value;
         updateScatterPlot(scatterPlot);
+        //updatePCABins(svg);
+        updatePCAPlot(pcaPlot);
     });
     altStory = "None";
     div.altStory.append("option").attr("value", "None").text("None");
@@ -446,6 +453,8 @@ function drawControlPanel(div) {
     div.append("button").text("Change Color Scale").on("click", function(){
         useLogDensityScale = !useLogDensityScale;
         updateScatterPlot(scatterPlot);
+        //updatePCABins(svg);
+        updatePCAPlot(pcaPlot);
     })
 }
 
@@ -637,6 +646,8 @@ function newTimeseries() {
     tsDivs.push(div);
     tsBrushExtent = [[scaleLeftXDynamic.domain()[0],0], [scaleLeftXDynamic.domain()[1], currentSim.numStory]];
     updateScatterPlot(scatterPlot);
+    updatePCABins(pcaPlot);
+    updatePCAPlot(pcaPlot);
 }
 
 function updateTimeseries() {
@@ -994,6 +1005,7 @@ function eqBrushed() {
     d3.select(brushCell).call(tsBrush.clear());
     tsBrushExtent = [[scaleLeftXDynamic.domain()[0],0], [scaleLeftXDynamic.domain()[1], currentSim.numStory]];
     updateScatterPlot(scatterPlot);
+    updatePCABins(svg);
     updatePCAPlot(pcaPlot);
 }
 
@@ -1027,6 +1039,7 @@ function tsBrushEnd() {
         tsBrushExtent = [[scaleLeftXDynamic.domain()[0],0], [scaleLeftXDynamic.domain()[1], currentSim.numStory]];
     }
     updateScatterPlot(scatterPlot);
+    updatePCABins(pcaPlot);
     updatePCAPlot(pcaPlot);
 }
 
@@ -1047,6 +1060,7 @@ function zoomEvent() {
     d3.select(brushCell).call(tsBrush.clear());
     tsBrushExtent = [[scaleLeftXDynamic.domain()[0],0], [scaleLeftXDynamic.domain()[1], currentSim.numStory]];
     updateScatterPlot(scatterPlot);
+    updatePCABins(svg);
     updatePCAPlot(pcaPlot);
 }
 
@@ -1129,9 +1143,6 @@ function drawPCAPlot(svg) {
 }
 
 function updatePCAPlot(svg) {
-
-    updatePCABins(svg);
-
     // calculate max count
     var maxCount = -Infinity;
     for (var i = 0; i < N; i++) {
@@ -1180,13 +1191,17 @@ function updatePCAPlot(svg) {
 }
 
 function updatePCABins(svg) {
-    function handler(matrix) {
+    function handler(result) {
+        console.log(matrix);
+        console.log(result.eig_vector);
+        matrix = numeric.dot(matrix, numeric.transpose(result.eig_vector));
         console.log(matrix);
         pcaXExtent = d3.extent(matrix, function(data){ return data[0]; });
         pcaYExtent = d3.extent(matrix, function(data){ return data[1]; });
         svg.xScale.domain(pcaXExtent);
         svg.yScale.domain(pcaYExtent);
         for (var i = 0; i < matrix.length; i++) {
+            //debugger;
             var x, y;
             if (pcaXExtent[0] == pcaXExtent[1]) x = matrix[i][0];
             else
@@ -1206,15 +1221,16 @@ function updatePCABins(svg) {
                 console.error(err.message)
             }
         }
+        updatePCAPlot(svg);
     }
     console.log("Update PCA Bins!")
     var iStart = 0, iEnd = currentSim.length - 1;
     var jStart = 0, jEnd = currentSim.numStory - 1;
-
     iStart = Math.ceil(tsBrushExtent[0][X] * 400);
     iEnd = Math.ceil(tsBrushExtent[1][X] * 400)-1;
     jStart = tsBrushExtent[0][Y];
     jEnd = tsBrushExtent[1][Y] - 1;
+    matrix = currentSim.getDataMatrix(iStart, iEnd, jStart, jEnd);
     clearBins(svg);
     /*
     var yAttr = selectedAttr;
@@ -1234,13 +1250,13 @@ function updatePCABins(svg) {
                            'count'];
 
     extent = [[iStart, iEnd], [jStart, jEnd]];
-    xExtent = [0, currentSim.length];
-    yExtent = [0, currentSim.numStory];
+    xExtent = [0, currentSim.length-1];
+    yExtent = [0, currentSim.numStory-1];
 
     nc.setup(quadtree_level, variable_schema);
     nc.query_quadtree(extent, xExtent, yExtent, handler);
+
     /*
-    var pca = new PCA();
     var beforeMatrix = new Date().getTime();
     matrix = currentSim.getDataMatrix(iStart, iEnd+1, jStart, jEnd+1);
     var afterMatrix = new Date().getTime();
