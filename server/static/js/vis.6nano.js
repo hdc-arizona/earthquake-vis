@@ -36,6 +36,18 @@ if (!sid) {
     sid = 7;
 }
 
+if (!String.prototype.format) {
+ String.prototype.format = function() {
+   var args = arguments;
+   return this.replace(/{(\d+)}/g, function(match, number) {
+     return typeof args[number] != 'undefined'
+       ? args[number]
+       : match
+     ;
+   });
+ };
+}
+
 eqs = {
     data:{},
     sims:{},
@@ -1168,6 +1180,33 @@ function updatePCAPlot(svg) {
 }
 
 function updatePCABins(svg) {
+    function handler(matrix) {
+        console.log(matrix);
+        pcaXExtent = d3.extent(matrix, function(data){ return data[0]; });
+        pcaYExtent = d3.extent(matrix, function(data){ return data[1]; });
+        svg.xScale.domain(pcaXExtent);
+        svg.yScale.domain(pcaYExtent);
+        for (var i = 0; i < matrix.length; i++) {
+            var x, y;
+            if (pcaXExtent[0] == pcaXExtent[1]) x = matrix[i][0];
+            else
+                x = Math.floor((matrix[i][0] - pcaXExtent[0]) * N / (pcaXExtent[1] - pcaXExtent[0]));
+            if (pcaYExtent[0] == pcaYExtent[1]) y = matrix[i][1];
+            else
+                y = Math.floor((matrix[i][1] - pcaYExtent[0]) * N / (pcaYExtent[1] - pcaYExtent[0]));
+            x = Math.max(x, 0);
+            x = Math.min(x, N-1);
+            y = Math.max(y, 0);
+            y = Math.min(y, N-1);
+            try {
+                svg.bins[x][y]++;
+            } catch(err) {
+                console.log([matrix[i]]);
+                console.log([x,y])
+                console.error(err.message)
+            }
+        }
+    }
     console.log("Update PCA Bins!")
     var iStart = 0, iEnd = currentSim.length - 1;
     var jStart = 0, jEnd = currentSim.numStory - 1;
@@ -1185,6 +1224,22 @@ function updatePCABins(svg) {
     svg.xts = currentSim.ts[selectedAttr];
     svg.yts = currentSim.ts[yAttr];
     */
+
+    var quadtree_level = 25;
+    var variable_schema = ['0', '1', '2', '3', '4', '5','0*0',
+                           '0*1', '0*2', '0*3', '0*4', '0*5',
+                           '1*1', '1*2', '1*3', '1*4', '1*5',
+                           '2*2', '2*3', '2*4', '2*5', '3*3',
+                           '3*4', '3*5', '4*4', '4*5', '5*5',
+                           'count'];
+
+    extent = [[iStart, iEnd], [jStart, jEnd]];
+    xExtent = [0, currentSim.length];
+    yExtent = [0, currentSim.numStory];
+
+    nc.setup(quadtree_level, variable_schema);
+    nc.query_quadtree(extent, xExtent, yExtent, handler);
+    /*
     var pca = new PCA();
     var beforeMatrix = new Date().getTime();
     matrix = currentSim.getDataMatrix(iStart, iEnd+1, jStart, jEnd+1);
@@ -1194,29 +1249,7 @@ function updatePCABins(svg) {
     matrix = pca.pca(matrix);
     var afterPCA = new Date().getTime();
     console.log("Calculate PCA: " + (afterPCA - afterMatrix));
-    pcaXExtent = d3.extent(matrix, function(data){ return data[0]; });
-    pcaYExtent = d3.extent(matrix, function(data){ return data[1]; });
-    svg.xScale.domain(pcaXExtent);
-    svg.yScale.domain(pcaYExtent);
-    for (var i = 0; i < matrix.length; i++) {
-        var x, y;
-        if (pcaXExtent[0] == pcaXExtent[1]) x = matrix[i][0];
-        else
-            x = Math.floor((matrix[i][0] - pcaXExtent[0]) * N / (pcaXExtent[1] - pcaXExtent[0]));
-        if (pcaYExtent[0] == pcaYExtent[1]) y = matrix[i][1];
-        else
-            y = Math.floor((matrix[i][1] - pcaYExtent[0]) * N / (pcaYExtent[1] - pcaYExtent[0]));
-        x = Math.max(x, 0);
-        x = Math.min(x, N-1);
-        y = Math.max(y, 0);
-        y = Math.min(y, N-1);
-        try {
-            svg.bins[x][y]++;
-        } catch(err) {
-            console.log([matrix[i]]);
-            console.log([x,y])
-            console.error(err.message)
-        }
-    }
+    */
+
 }
 

@@ -46,6 +46,11 @@ def index():
     return app.send_static_file('index.html')
 
 
+@app.route('/nano-vis')
+def nano():
+    return app.send_static_file('nano.html')
+
+
 @app.route('/')
 def earthquakes():
     from form import NewSimulationDataForm
