@@ -44,7 +44,7 @@ nc.query_quadtree_eq = function (extent, xExtent, yExtent, handleFunc, eq) {
     var upXTile = Math.min(n-1,Math.floor(((extent[0][1]-xExtent[0])/xRange)*n));
     var lowYTile = Math.min(n-1,Math.floor(((extent[1][0]-yExtent[0])/yRange)*n));
     var upYTile = Math.min(n-1,Math.floor(((extent[1][1]-yExtent[0])/yRange)*n));
-    var query = 'http://hdc.arizona.edu/nanocube/10100/count.r("eq",set('+ (eq-1) +')).r("location",range2d(tile2d({0},{1},{4}),tile2d({2},{3},{4})))'.format(lowXTile,lowYTile,upXTile,upYTile,nc._quadtree_level);
+    var query = 'http://hdc.cs.arizona.edu/nanocube/10100/count.r("eq",set('+ (eq-1) +')).r("location",range2d(tile2d({0},{1},{4}),tile2d({2},{3},{4})))'.format(lowXTile,lowYTile,upXTile,upYTile,nc._quadtree_level);
     //var query = 'http://localhost:29512/count.r("location",range2d(tile2d({0},{1},{4}),tile2d({2},{3},{4})))'.format(lowXTile,lowYTile,upXTile,upYTile,2);
     //var query = 'http://localhost:29512/count';
     console.log(query);
