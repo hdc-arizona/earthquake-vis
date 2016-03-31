@@ -1,11 +1,15 @@
 #!/usr/local/bin/python3
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_bootstrap import Bootstrap
-
+from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
+        os.path.join(BASE_DIR, 'log.sqlite')
 Bootstrap(app)
+db = SQLAlchemy(app)
 
 # disable debug when deloying
 app.debug = True
@@ -64,6 +68,54 @@ def static_proxy(path):
     # send static_file will guess the correct MIME type
     return app.send_static_file(path)
 
+
+class Log(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    sim = db.Column(db.Integer)
+    tStart = db.Column(db.Integer)
+    tEnd = db.Column(db.Integer)
+    fStart = db.Column(db.Integer)
+    fEnd = db.Column(db.Integer)
+    nanoTime = db.Column(db.Float)
+    jsTime = db.Column(db.Float)
+
+    def __init__(self, sim, tStart, tEnd, fStart, fEnd, nanoTime, jsTime):
+        self.sim = sim
+        self.tStart = tStart
+        self.tEnd = tEnd
+        self.fStart = fStart
+        self.fEnd = fEnd
+        self.nanoTime = nanoTime
+        self.jsTime = jsTime
+
+    def __repr__(self):
+        return '<Log %d>' % self.id
+
+
+@app.route('/log', methods=['GET', 'POST'])
+def log():
+    if request.method == 'POST':
+        sim = request.form['sim']
+        print(sim)
+        tStart = request.form['timeStart']
+        print(tStart)
+        tEnd = request.form['timeEnd']
+        print(tEnd)
+        fStart = request.form['floorStart']
+        print(fStart)
+        fEnd = request.form['floorEnd']
+        print(fEnd)
+        nanoTime = request.form['nanoTime']
+        print(nanoTime)
+        jsTime = request.form['jsTime']
+        print(jsTime)
+        log = Log(sim, tStart, tEnd, fStart, fEnd, nanoTime, jsTime)
+        db.session.add(log)
+        db.session.commit()
+        return str(log.id)
+    else:
+        logs = Log.query.all()
+        return render_template('log.html', logs=logs)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

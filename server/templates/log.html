@@ -1,0 +1,63 @@
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block title %}
+Earthquake Simulation Data
+{% endblock %}
+{% block body %}
+<div class="container">
+    <h1>Performance Log</h1>
+    <table class="table">
+        <caption>Data List:</caption>
+        <tr>
+            <th>ID</th>
+            <th>SIM</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Start Floor</th>
+            <th>End Floor</th>
+            <th>Nanocube Time</th>
+            <th>Javascript Time</th>
+            <th>Speedup</th>
+        </tr>
+        {% for log in logs %}
+        <tr>
+          <td>{{ log.id }}</td>
+          <td>{{ log.sim }}</td>
+          <td>{{ log.tStart }}</td>
+          <td>{{ log.tEnd }}</td>
+          <td>{{ log.fStart }}</td>
+          <td>{{ log.fEnd }}</td>
+          {% if log.nanoTime > 1000 %}
+            <td class="danger">{{ log.nanoTime }}</td>
+          {% elif log.nanoTime < 100 %}
+            <td class="success">{{ log.nanoTime }}</td>
+          {% else %}
+            <td>{{ log.nanoTime }}</td>
+          {% endif %}
+
+          {% if log.jsTime > 1000 %}
+            <td class="danger">{{ log.jsTime }}</td>
+          {% elif log.jsTime < 100 %}
+            <td class="success">{{ log.jsTime }}</td>
+          {% else %}
+            <td>{{ log.jsTime }}</td>
+          {% endif %}
+
+          {% if log.nanoTime < log.jsTime %}
+            {% if log.jsTime/log.nanoTime < 2 %}
+              <td class="info">{{ log.jsTime/log.nanoTime }}</td>
+            {% else %}
+              <td class="success">{{ log.jsTime/log.nanoTime }}</td>
+            {% endif %}
+          {% else %}
+            {% if log.nanoTime/log.jsTime < 2 %}
+              <td class="warning">{{ log.nanoTime/log.jsTime }}</td>
+            {% else %}
+              <td class="danger">{{ log.nanoTime/log.jsTime }}</td>
+            {% endif %}
+          {% endif %}
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endblock %}

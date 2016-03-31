@@ -1193,7 +1193,7 @@ function updatePCABins(svg) {
     */
     var pca = new PCA();
     var beforeMatrix = new Date().getTime();
-    matrix = currentSim.getDataMatrix(iStart, iEnd, jStart, jEnd);
+    matrix = currentSim.getDataMatrix(iStart, iEnd-1, jStart, jEnd-1);
     var afterMatrix = new Date().getTime();
     console.log("Prepare Matrix: " + (afterMatrix - beforeMatrix));
     matrix = pca.scale(matrix,true,true);

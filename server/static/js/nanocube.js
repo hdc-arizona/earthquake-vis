@@ -20,15 +20,42 @@ nc.setup = function (level, s) {
 };
 
 nc.query_all = function (handleFunc) {
-    $.getJSON('http://localhost:29512/count', function(data) {
+    $.getJSON('http://localhost:12345/count', function(data) {
         handleFunc(nc._pca(data.root.val));
     });
 };
 
 nc.query_categorty = function (c_id, handleFunc) {
-    var query = 'http://localhost:29512/count.r("test_category",set(['+c_id+']))'
+    var query = 'http://localhost:12345/count.r("test_category",set(['+c_id+']))'
     $.getJSON(query, function(data) {
         handleFunc(nc._pca(data.root.val));
+    });
+};
+
+nc.query_quadtree_eq = function (extent, xExtent, yExtent, handleFunc, eq) {
+    console.log('extent', extent);
+    console.log(xExtent);
+    console.log(yExtent);
+    var n = Math.pow(2, nc._quadtree_level);
+    //var n = Math.pow(2, 2);
+    var xRange = xExtent[1]-xExtent[0];
+    var yRange = yExtent[1]-yExtent[0];
+    var lowXTile = Math.min(n-1,Math.floor(((extent[0][0]-xExtent[0])/xRange)*n));
+    var upXTile = Math.min(n-1,Math.floor(((extent[0][1]-xExtent[0])/xRange)*n));
+    var lowYTile = Math.min(n-1,Math.floor(((extent[1][0]-yExtent[0])/yRange)*n));
+    var upYTile = Math.min(n-1,Math.floor(((extent[1][1]-yExtent[0])/yRange)*n));
+    var query = 'http://hdc.arizona.edu/nanocube/10100/count.r("eq",set('+ (eq-1) +')).r("location",range2d(tile2d({0},{1},{4}),tile2d({2},{3},{4})))'.format(lowXTile,lowYTile,upXTile,upYTile,nc._quadtree_level);
+    //var query = 'http://localhost:29512/count.r("location",range2d(tile2d({0},{1},{4}),tile2d({2},{3},{4})))'.format(lowXTile,lowYTile,upXTile,upYTile,2);
+    //var query = 'http://localhost:29512/count';
+    console.log(query);
+    $.getJSON(query, function(data) {
+        //console.log(data);
+        var vec = data.root.val;
+        if(typeof vec === 'undefined') {
+            return;
+        } else {
+            handleFunc(nc._pca(vec));
+        }
     });
 };
 
@@ -73,6 +100,7 @@ nc._pca = function (vec) {
     for(var i = 0; i < d; i ++) {
         covMat[i] = new Array(d);
     }
+    console.log(vec);
 
     // build the upper triangular area
     for(var row = 0; row < d; row ++) {

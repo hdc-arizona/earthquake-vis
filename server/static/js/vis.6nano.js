@@ -125,7 +125,6 @@ function sim(eid,numStory) {
                 var attrs = ['shear', 'moment', 'diaphram force', 'acceleration/PGA', 'drift ratio','interstory drift ratio'];
                 for (var attr in attrs) {
                     //console.log(row[attr]);
-                    //debugger;
                     row.push(this.ts[attrs[attr]].data[i][j]);
                 }
                 result.push(row);
@@ -1190,12 +1189,17 @@ function updatePCAPlot(svg) {
     svg.select(".yAxis").transition().call(svg.yAxis);
 }
 
+function executeAsync(func) {
+    setTimeout(func, 0);
+}
+
 function updatePCABins(svg) {
     function handler(result) {
-        console.log(matrix);
-        console.log(result.eig_vector);
+        nano_end = performance.now();
+        //console.log(matrix);
+        //console.log(result);
         matrix = numeric.dot(matrix, numeric.transpose(result.eig_vector));
-        console.log(matrix);
+        //console.log(matrix);
         pcaXExtent = d3.extent(matrix, function(data){ return data[0]; });
         pcaYExtent = d3.extent(matrix, function(data){ return data[1]; });
         svg.xScale.domain(pcaXExtent);
@@ -1221,7 +1225,30 @@ function updatePCABins(svg) {
                 console.error(err.message)
             }
         }
-        updatePCAPlot(svg);
+        executeAsync(function() {
+            updatePCAPlot(svg);
+        });
+
+        js_start = performance.now();
+        var pca = new PCA();
+        matrix = pca.scale(matrix,true,true);
+        matrix = pca.pca(matrix);
+        js_end = performance.now();
+        console.log([nano_start, nano_end, js_start, js_end, iStart, iEnd, jStart, jEnd]);
+        $.post("log",
+            {
+                floorStart: jStart,
+                floorEnd: jEnd,
+                timeStart: iStart,
+                timeEnd: iEnd,
+                nanoTime: nano_end - nano_start,
+                jsTime: js_end - js_start,
+                sim: sid
+            },
+            function(data, status){
+                console.log("Data: " + data + "\nStatus: " + status);
+            });
+
     }
     console.log("Update PCA Bins!")
     var iStart = 0, iEnd = currentSim.length - 1;
@@ -1254,7 +1281,8 @@ function updatePCABins(svg) {
     yExtent = [0, currentSim.numStory-1];
 
     nc.setup(quadtree_level, variable_schema);
-    nc.query_quadtree(extent, xExtent, yExtent, handler);
+    nano_start = performance.now();
+    nc.query_quadtree_eq(extent, xExtent, yExtent, handler, sid);
 
     /*
     var beforeMatrix = new Date().getTime();

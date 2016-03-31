@@ -84,10 +84,6 @@ var PCA = function(){
         if (center){
             var m = mean(X);
             X = X.map(function(row){ return sub(row, m); });
-            X = transpose(X);
-            m = mean(X);
-            X = X.map(function(row){ return sub(row, m); });
-            X = transpose(X);
         }
 
         if (scale){
@@ -385,8 +381,8 @@ var PCA = function(){
         var V = USV.V;
 
         // T = X*V = U*S
-        console.log(V);
-        var pcXV = dot(X,V);
+
+        //var pcXV = dot(X,V);
         /*
         var pcUdS = dot(U,S);
 
@@ -397,6 +393,6 @@ var PCA = function(){
             console.log(prod);
         }
         */
-        return pcXV;
+        return V;
     }
 };
